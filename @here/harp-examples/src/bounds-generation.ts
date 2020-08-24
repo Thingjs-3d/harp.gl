@@ -15,7 +15,8 @@ import {
     GeoCoordinates,
     GeoPolygon,
     mercatorProjection,
-    sphereProjection
+    sphereProjection,
+    webMercatorTilingScheme
 } from "@here/harp-geoutils";
 import { geoCoordLikeToGeoPointLike } from "@here/harp-geoutils/lib/coordinates/GeoCoordLike";
 import { MapControls, MapControlsUI } from "@here/harp-map-controls";
@@ -23,6 +24,7 @@ import { BoundsGenerator, CopyrightElementHandler, MapView } from "@here/harp-ma
 import { VectorTileDataSource } from "@here/harp-vectortile-datasource";
 
 import { apikey } from "../config";
+import { DebugTileDataSource } from "@here/harp-debug-datasource";
 
 export namespace BoundsExample {
     const message = document.createElement("div");
@@ -31,7 +33,8 @@ export namespace BoundsExample {
   <br />  Press "h" to look at the last created Polygon's BoundingBox
   <br />  Press "g" to look at the last created Polygon
   <br />  Press "b" to show the boundingbox of the Polygon
-  <br />  Press "p" to toggle the projection (!!bounds creation for sphere projection is not yet implemented)`;
+  <br />  Press "p" to toggle the projection (!!bounds creation for sphere projection is not yet implemented)
+  <br />  Press "w" to toggle tile wrapping in planar projection`;
 
     message.style.position = "absolute";
     message.style.cssFloat = "right";
@@ -128,6 +131,7 @@ export namespace BoundsExample {
 
         addVectorTileDataSource(map);
         const featuresDataSource = addFeaturesDataSource(map, []);
+        map.addDataSource(new DebugTileDataSource(webMercatorTilingScheme, "debug"));
         const boundsGenerator = new BoundsGenerator(
             map.camera,
             map.projection,
@@ -154,7 +158,7 @@ export namespace BoundsExample {
                     map.lookAt({ bounds });
                     break;
                 case "p":
-                    map.projection =
+                    boundsGenerator.projection = map.projection =
                         map.projection === mercatorProjection
                             ? sphereProjection
                             : mercatorProjection;
@@ -184,6 +188,11 @@ export namespace BoundsExample {
                         "far: ",
                         map.camera.far
                     );
+                    break;
+                case "w":
+                    mapView.tileWrappingEnabled = !mapView.tileWrappingEnabled;
+                    boundsGenerator.tileWrappingEnabled = mapView.tileWrappingEnabled;
+                    mapView.update();
                     break;
                 default:
                     break;

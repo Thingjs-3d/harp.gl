@@ -139,7 +139,7 @@ export class GeoPolygon implements GeoPolygonLike {
         );
     }
 
-    private getArea(): number {
+    getArea(): number {
         let area = 0;
         let previousIndex = this.m_coordinates.length - 1;
 

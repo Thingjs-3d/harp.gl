@@ -3,7 +3,7 @@
  * Licensed under Apache 2.0, see full license in LICENSE
  * SPDX-License-Identifier: Apache-2.0
  */
-import { assert } from "chai";
+import { assert, expect } from "chai";
 
 import { GeoCoordinates } from "../lib/coordinates/GeoCoordinates";
 import { GeoPolygon } from "../lib/coordinates/GeoPolygon";
@@ -97,6 +97,50 @@ describe("GeoPolygon", function() {
         }
         assert.deepEqual(centroid, new GeoCoordinates(6, 165));
         assert.isTrue(geoBBox.contains(centroid));
+    });
+
+    it("Centroid test", function() {
+        const geoPolygon = new GeoPolygon([
+            new GeoCoordinates(10, -150),
+            new GeoCoordinates(1, -120),
+            new GeoCoordinates(20, -20),
+            new GeoCoordinates(15, 170)
+        ]);
+        const centroid = geoPolygon.getCentroid();
+
+        assert.isDefined(centroid);
+        if (centroid === undefined) {
+            return;
+        }
+    });
+
+    it("Area test", function() {
+        const geoPolygon1 = new GeoPolygon([
+            new GeoCoordinates(10, 170),
+            new GeoCoordinates(7, 150),
+            new GeoCoordinates(1, 130)
+        ]);
+        const area1 = geoPolygon1.getArea();
+
+        assert.isAbove(area1, 0);
+
+        const geoPolygon = new GeoPolygon([
+            new GeoCoordinates(10, -150),
+            new GeoCoordinates(7, -170),
+            new GeoCoordinates(1, 170)
+        ]);
+        const area = geoPolygon.getArea();
+
+        assert.isAbove(area, 0);
+
+        const geoPolygon2 = new GeoPolygon([
+            new GeoCoordinates(7, -150),
+            new GeoCoordinates(10, -170),
+            new GeoCoordinates(1, 170)
+        ]);
+        const area2 = geoPolygon2.getArea();
+
+        assert.isBelow(area2, 0);
     });
 
     it("creates Invalid BoundingBox and NO Centroid for twisted sorted coordinates", function() {
