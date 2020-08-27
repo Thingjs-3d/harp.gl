@@ -241,6 +241,7 @@ export class VectorTileDataEmitter {
 
     private readonly m_sources: string[] = [];
     private m_maxGeometryHeight: number = 0;
+    private m_minGeometryHeight: number = 0;
 
     constructor(
         private readonly m_decodeInfo: DecodeInfo,
@@ -1014,6 +1015,7 @@ export class VectorTileDataEmitter {
             decodedTile.copyrightHolderIds = this.m_sources;
         }
         decodedTile.maxGeometryHeight = this.m_maxGeometryHeight;
+        decodedTile.minGeometryHeight = this.m_minGeometryHeight;
         return decodedTile;
     }
 
@@ -1552,6 +1554,10 @@ export class VectorTileDataEmitter {
                         }
                         this.m_maxGeometryHeight = Math.max(
                             this.m_maxGeometryHeight,
+                            scaleFactor * height
+                        );
+                        this.m_minGeometryHeight = Math.min(
+                            this.m_minGeometryHeight,
                             scaleFactor * height
                         );
 

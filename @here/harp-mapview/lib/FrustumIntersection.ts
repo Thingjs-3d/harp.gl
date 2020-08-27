@@ -37,7 +37,8 @@ export class TileKeyEntry {
         public offset: number = 0,
         public minElevation: number = 0,
         public maxElevation: number = 0,
-        public distance: number = 0
+        public distance: number = 0,
+        public calculationStatus: CalculationStatus | undefined = undefined
     ) {}
 }
 
@@ -269,6 +270,7 @@ export class FrustumIntersection {
         elevationRangeSource?: ElevationRangeSource
     ): TileKeyEntry | undefined {
         const geoBox = getGeoBox(tilingScheme, tileKey, offset);
+        let calculationStatus: CalculationStatus | undefined = undefined;
 
         // For tiles without elevation range source, default 0 (getGeoBox always
         // returns box with altitude min/max equal to zero) will be propagated as
@@ -278,9 +280,9 @@ export class FrustumIntersection {
             const range = elevationRangeSource!.getElevationRange(tileKey);
             geoBox.southWest.altitude = range.minElevation;
             geoBox.northEast.altitude = range.maxElevation;
+            calculationStatus = range.calculationStatus;
             cache.calculationFinal =
-                cache.calculationFinal &&
-                range.calculationStatus === CalculationStatus.FinalPrecise;
+                cache.calculationFinal && calculationStatus === CalculationStatus.FinalPrecise;
         }
 
         this.mapView.projection.projectBox(geoBox, cache.tileBounds);
@@ -293,6 +295,7 @@ export class FrustumIntersection {
                 offset,
                 geoBox.southWest.altitude, // minElevation
                 geoBox.northEast.altitude, // maxElevation
+                calculationStatus, // status of elevation calculation
                 distance
             );
         }

@@ -26,6 +26,8 @@ import { BoxBufferGeometry, Matrix4, Vector3 } from "three";
 
 import { CUSTOM_DECODER_SERVICE_TYPE } from "./custom_decoder_defs";
 
+const GEOMETRY_HEIGHT = -100;
+
 export // snippet:custom_datasource_example_custom_decoder.ts
 class CustomDecoder extends ThemedTileDecoder
 // end:custom_datasource_example_custom_decoder.ts
@@ -53,7 +55,9 @@ class CustomDecoder extends ThemedTileDecoder
         const decodedTile: DecodedTile = {
             techniques: styleSetEvaluator.techniques,
             geometries,
-            dependencies
+            dependencies,
+            maxGeometryHeight: 0,
+            minGeometryHeight: GEOMETRY_HEIGHT
         };
         return Promise.resolve(decodedTile);
     }
@@ -97,7 +101,7 @@ class CustomDecoder extends ThemedTileDecoder
         projection: Projection,
         geometries: Geometry[]
     ) {
-        // Setup an environment for this "layer". This does normaly come from the data and should
+        // Setup an environment for this "layer". This does normally come from the data and should
         // contain all the attributes of a specific feature, so that it can be styled properly.
         const env = new MapEnv({ layer: "line-layer" });
 
@@ -143,6 +147,7 @@ class CustomDecoder extends ThemedTileDecoder
             // We add +1 to skip the first entry which has the number of points
             tmpGeoPoint.latitude += data[i + 1];
             tmpGeoPoint.longitude += data[i + 2];
+            tmpGeoPoint.altitude = GEOMETRY_HEIGHT;
             projection.projectPoint(tmpGeoPoint, tmpWorldPoint);
             tmpWorldPoint.sub(worldCenter).toArray(worldPoints, (i / 2) * 3);
         }

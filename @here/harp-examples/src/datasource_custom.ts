@@ -3,12 +3,16 @@
  * Licensed under Apache 2.0, see full license in LICENSE
  * SPDX-License-Identifier: Apache-2.0
  */
-
 import { Theme } from "@here/harp-datasource-protocol";
 import { DebugTileDataSource } from "@here/harp-debug-datasource";
 import { GeoCoordinates, TileKey, webMercatorTilingScheme } from "@here/harp-geoutils";
 import { MapControls, MapControlsUI } from "@here/harp-map-controls";
-import { CopyrightElementHandler, MapView, Tile } from "@here/harp-mapview";
+import {
+    CopyrightElementHandler,
+    MapView,
+    StaticElevationRangeSource,
+    Tile
+} from "@here/harp-mapview";
 import {
     DataProvider,
     TileDataSource,
@@ -23,6 +27,7 @@ import { CUSTOM_DECODER_SERVICE_TYPE } from "../decoder/custom_decoder_defs";
  * 1. Decoding and processing in a web-worker
  * 2. Usage of the styling engine in a custom datasource
  * 3. Creation of three.js objects in a web-worker
+ * 4. Creating data that appears above and below ground level
  *
  * To achieve all this we have to implement a custom decoder:
  * ```typescript
@@ -93,9 +98,32 @@ import { CUSTOM_DECODER_SERVICE_TYPE } from "../decoder/custom_decoder_defs";
  * ```typescript
  * [[include:custom_datasource_example_custom_decoder_service_start.ts]]
  * ```
+ *
+ * To properly geometry that is considerable higher or lower than the ground level, the bounding
+ * boxes of the [[Tile]]s have to be enlarged to contain that geometry. If that is not done, the
+ * tile may not be rendered at all, or the geometry may be clipped in some circumstances.
+ *
+ * The [[ElevationRangeSource]] determines if a [[Tile]] is potentially visible, by computing the
+ * bounds of the [[Tile]] and takes the maximum and minimum elevation of geometry in this
+ * [[Tile]] into account. If it is potentially visible, it is loaded to compute its actual
+ * bounds, which is then used to determine if the [[Tile]] is visible.
+ *
+ * In this example, the line is rendered at an altitude of -100m, making the line appear on
+ * ground level when zoomed out, but increasingly far below ground level when zoomed in.
+ *
+ * To facilitate the proper computation of the bounding boxes, a simple
+ * [[StaticElevationRangeSource]] is added as an option to [[MapView]]:
+ * ```typescript
+ * [[include:custom_datasource_example_elevation_range_source.ts]]
+ * ```
+ * Large values in the elevation range may cause a lot of [[Tile]]s to be loaded, just because
+ * their data is (only) potentially visible. So it is advisable to keep the elevation values to the
+ * values actually required by the application.
  **/
 
 export namespace CustomDatasourceExample {
+    const MIN_GEOMETRY_HEIGHT = -100;
+
     // snippet:custom_datasource_example_custom_data_provider.ts
     class CustomDataProvider implements DataProvider
     // end:custom_datasource_example_custom_data_provider.ts
@@ -220,15 +248,22 @@ export namespace CustomDatasourceExample {
     }
 
     // Create a new MapView for the HTMLCanvasElement of the given id.
-    function initializeMapView(id: string): MapView {
+    async function initializeMapView(id: string): Promise<MapView> {
         const canvas = document.getElementById(id) as HTMLCanvasElement;
 
         const map = new MapView({
             canvas,
             theme: customTheme(),
             // snippet:custom_datasource_example_map_view_decoder_bundle.ts
-            decoderUrl: "decoder.bundle.js"
+            decoderUrl: "decoder.bundle.js",
             // end:custom_datasource_example_map_view_decoder_bundle.ts
+            // snippet:custom_datasource_example_elevation_range_source.ts
+            elevationRangeSource: new StaticElevationRangeSource(
+                webMercatorTilingScheme,
+                0,
+                MIN_GEOMETRY_HEIGHT
+            )
+            // end:custom_datasource_example_elevation_range_source.ts
         });
 
         CopyrightElementHandler.install("copyrightNotice", map);
